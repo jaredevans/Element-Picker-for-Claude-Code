@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Element Picker Bookmarklet</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181b;
+    --surface-2: #222226;
+    --border: #2e2e33;
+    --text: #e4e4e7;
+    --text-muted: #71717a;
+    --accent: #ef4444;
+    --accent-glow: rgba(239, 68, 68, 0.15);
+    --green: #22c55e;
+    --yellow: #facc15;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1.5rem;
+  }
+
+  .container { max-width: 720px; width: 100%; }
+  .header { margin-bottom: 3rem; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle { color: var(--text-muted); font-size: 1rem; line-height: 1.6; }
+
+  .bookmarklet-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .bookmarklet-section h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .drag-target {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--accent), #dc2626);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: grab;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 12px rgba(239, 68, 68, 0.3);
+    user-select: none;
+  }
+  .drag-target:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4); }
+  .drag-target:active { cursor: grabbing; }
+  .drag-hint { display: block; margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted); }
+
+  .steps { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    min-width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-content h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+  .step-content p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+  .output-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .output-preview h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.73rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    overflow-x: auto;
+  }
+  .code-block .comment { color: var(--green); }
+  .code-block .tag { color: var(--accent); }
+  .code-block .attr { color: var(--yellow); }
+  .code-block .dim { color: #52525b; }
+
+  .footer-note {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  kbd {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="badge">Bookmarklet Tool</div>
+    <h1>Element Picker<br>for Claude Code</h1>
+    <p class="subtitle">Click elements on any page, annotate each one, and collect them all into a single clipboard-ready list to paste into Claude Code.</p>
+  </div>
+
+  <div class="bookmarklet-section">
+    <h2>Install</h2>
+    <a class="drag-target" id="bookmarklet" href="#">&#8853; Element Picker</a>
+    <span class="drag-hint">Drag this button to your bookmarks bar. Or right-click &rarr; Bookmark this link.</span>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Activate the picker</h3>
+        <p>Navigate to any page, then click the bookmarklet. A red banner and an Annotations panel appear.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Click &amp; annotate elements</h3>
+        <p>Click an element &rarr; it highlights red &rarr; type your comment &rarr; press <kbd>Enter</kbd> or click <strong>Add to List</strong>. The annotation appears in the panel. Repeat for as many elements as you want.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Review the list</h3>
+        <p>The Annotations panel shows all your picks. Remove any with the &times; button. Minimize the panel with &mdash; if it&rsquo;s in your way.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Copy &amp; paste into Claude Code</h3>
+        <p>Click <strong>Done &amp; Copy</strong> (or press <kbd>Esc</kbd>) to copy all annotations to clipboard and exit. Click <strong>Copy All</strong> to copy without exiting.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="output-preview">
+    <h2>Example clipboard output</h2>
+    <div class="code-block">
+      <span class="tag">[1] button#submit-btn.btn-primary</span><br>
+      Path: <span class="attr">div.container &gt; form#checkout &gt; div.actions &gt; button#submit-btn.btn-primary</span><br>
+      In: <span class="attr">div.actions</span><br>
+      Text: "Submit Order"<br>
+      <span class="comment">TODO: Make this green with white text</span><br>
+      <br>
+      <span class="tag">[2] h1.page-title</span><br>
+      Path: <span class="attr">div.container &gt; header.top-bar &gt; h1.page-title</span><br>
+      In: <span class="attr">header.top-bar</span><br>
+      Text: "Dashboard"<br>
+      <span class="comment">TODO: Change to "Overview" and reduce font size</span><br>
+    </div>
+  </div>
+
+  <p class="footer-note">Works on any page &middot; No dependencies &middot; All processing is local</p>
+</div>
+
+<script>
+// Build the bookmarklet as an array of strings to avoid template literal escaping nightmares
+var src = [];
+src.push('(function(){');
+src.push('if(window.__epActive)return;');
+src.push('window.__epActive=true;');
+
+// Styles
+src.push('var sty=document.createElement("style");sty.id="__ep-styles";');
+src.push('sty.textContent="');
+src.push('.__ep-hover{outline:2px dashed rgba(239,68,68,0.6)!important;outline-offset:2px!important;cursor:crosshair!important}');
+src.push('.__ep-selected{outline:3px solid #ef4444!important;outline-offset:2px!important;background:rgba(239,68,68,0.06)!important}');
+src.push('.__ep-dialog{position:fixed;z-index:2147483647;background:#18181b;border:1px solid #333;border-radius:10px;padding:16px;width:380px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#e4e4e7;box-shadow:0 8px 32px rgba(0,0,0,0.5)}');
+src.push('.__ep-dialog h4{margin:0 0 4px;font-size:13px;color:#ef4444;font-weight:600}');
+src.push('.__ep-dialog .ep-sel{font-size:11px;color:#71717a;margin-bottom:10px;word-break:break-all;font-family:monospace}');
+src.push('.__ep-dialog textarea{width:100%;height:70px;background:#0e0e10;border:1px solid #333;border-radius:6px;color:#e4e4e7;padding:8px;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;resize:vertical;outline:none}');
+src.push('.__ep-dialog textarea:focus{border-color:#ef4444}');
+src.push('.__ep-dialog .ep-btns{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}');
+src.push('.__ep-dialog button{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer}');
+src.push('.__ep-dialog .ep-save{background:#ef4444;color:#fff}.__ep-dialog .ep-save:hover{background:#dc2626}');
+src.push('.__ep-dialog .ep-cancel{background:#222;color:#aaa}.__ep-dialog .ep-cancel:hover{background:#333}');
+src.push('.__ep-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#22c55e;color:#fff;padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;font-family:-apple-system,sans-serif;opacity:0;transition:opacity 0.3s}');
+src.push('.__ep-banner{position:fixed;top:0;left:0;right:0;z-index:2147483646;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:600;font-family:-apple-system,sans-serif}');
+src.push('.__ep-panel{position:fixed;top:40px;right:12px;z-index:2147483646;width:360px;max-height:calc(100vh - 60px);background:#18181b;border:1px solid #333;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#e4e4e7;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:flex;flex-direction:column;overflow:hidden}');
+src.push('.__ep-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #333;flex-shrink:0}');
+src.push('.__ep-panel-hdr h3{font-size:13px;font-weight:700;color:#ef4444;margin:0}');
+src.push('.__ep-panel-hdr .ep-count{font-size:11px;color:#71717a;margin-left:6px}');
+src.push('.__ep-panel-hdr button{background:none;border:none;color:#71717a;cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px}');
+src.push('.__ep-panel-hdr button:hover{background:#333;color:#e4e4e7}');
+src.push('.__ep-panel-body{overflow-y:auto;flex:1;padding:8px}');
+src.push('.__ep-panel-empty{text-align:center;padding:24px 14px;color:#52525b;font-size:12px}');
+src.push('.__ep-panel-item{background:#0e0e10;border:1px solid #2a2a2e;border-radius:8px;padding:10px 12px;margin-bottom:6px;position:relative}');
+src.push('.__ep-panel-item .ep-item-num{font-size:10px;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px}');
+src.push('.__ep-panel-item .ep-item-sel{font-size:11px;color:#a1a1aa;font-family:monospace;word-break:break-all;margin-bottom:4px}');
+src.push('.__ep-panel-item .ep-item-cont{font-size:10px;color:#facc15;font-family:monospace;margin-bottom:4px}');
+src.push('.__ep-panel-item .ep-item-comment{font-size:12px;color:#e4e4e7;line-height:1.4}');
+src.push('.__ep-panel-item .ep-item-del{position:absolute;top:8px;right:8px;background:none;border:none;color:#52525b;cursor:pointer;font-size:14px;padding:0 4px;line-height:1}');
+src.push('.__ep-panel-item .ep-item-del:hover{color:#ef4444}');
+src.push('.__ep-panel-foot{padding:10px 14px;border-top:1px solid #333;display:flex;gap:8px;flex-shrink:0}');
+src.push('.__ep-panel-foot button{flex:1;padding:8px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer}');
+src.push('.__ep-panel-foot .ep-copy-all{background:#ef4444;color:#fff}.__ep-panel-foot .ep-copy-all:hover{background:#dc2626}');
+src.push('.__ep-panel-foot .ep-done{background:#22c55e;color:#fff}.__ep-panel-foot .ep-done:hover{background:#16a34a}');
+src.push('";');
+src.push('document.head.appendChild(sty);');
+
+// Banner
+src.push('var banner=document.createElement("div");banner.className="__ep-banner";');
+src.push('banner.textContent="ELEMENT PICKER ACTIVE \\u2014 click elements to annotate \\u00b7 panel collects all";');
+src.push('document.body.appendChild(banner);');
+
+// State
+src.push('var hoveredEl=null,dialogOpen=false,annotations=[];');
+
+// Helpers
+src.push('function getSelector(el){if(el.id)return el.tagName.toLowerCase()+"#"+el.id;var s=el.tagName.toLowerCase();if(el.className&&typeof el.className==="string"){var c=el.className.trim().split(/\\s+/).filter(function(x){return!x.startsWith("__ep")});if(c.length)s+="."+c.join(".")}return s}');
+src.push('function getParentPath(el){var parts=[],p=el.parentElement,d=0;while(p&&d<2&&p!==document.body){parts.unshift(getSelector(p));p=p.parentElement;d++}return parts.join(" > ")}');
+src.push('function getFullPath(el){var parts=[getSelector(el)],p=el.parentElement;while(p&&p!==document.body&&p!==document.documentElement){parts.unshift(getSelector(p));p=p.parentElement}return parts.join(" > ")}');
+src.push('var containerTags=["div","section","main","article","aside","nav","form","header","footer","fieldset","details","dialog","ul","ol","table"];');
+src.push('function getContainer(el){var tag=el.tagName.toLowerCase();if(containerTags.indexOf(tag)!==-1)return null;var p=el.parentElement;while(p&&p!==document.body&&p!==document.documentElement){if(containerTags.indexOf(p.tagName.toLowerCase())!==-1){var s=getSelector(p);var r=p.getAttribute("role");var a=p.getAttribute("aria-label");if(r)s+="[role="+r+"]";if(a)s+="[aria-label=\\\""+a+"\\\"]";return s}p=p.parentElement}return null}');
+src.push('function showToast(msg){var t=document.createElement("div");t.className="__ep-toast";t.textContent=msg;document.body.appendChild(t);requestAnimationFrame(function(){t.style.opacity="1"});setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove()},300)},1800)}');
+
+// Panel
+src.push('var panel=document.createElement("div");panel.className="__ep-panel";');
+src.push('panel.innerHTML=\'<div class="__ep-panel-hdr"><h3>Annotations <span class="ep-count">(0)</span></h3><div><button class="ep-min" title="Minimize">\\u2014</button></div></div><div class="__ep-panel-body"><div class="__ep-panel-empty">Click elements on the page to start annotating.</div></div><div class="__ep-panel-foot"><button class="ep-copy-all">Copy All</button><button class="ep-done">Done &amp; Copy</button></div>\';');
+src.push('document.body.appendChild(panel);');
+src.push('var panelBody=panel.querySelector(".__ep-panel-body"),panelCount=panel.querySelector(".ep-count"),panelMin=false;');
+
+// Minimize toggle
+src.push('panel.querySelector(".ep-min").addEventListener("click",function(){panelMin=!panelMin;panelBody.style.display=panelMin?"none":"";panel.querySelector(".__ep-panel-foot").style.display=panelMin?"none":"";this.textContent=panelMin?"+":"\\u2014";this.title=panelMin?"Expand":"Minimize"});');
+
+// Build output helpers
+src.push('function buildAnnotationText(a,i){var o="["+(i+1)+"] "+a.sel+"\\n";o+="Path: "+a.fullpath+"\\n";if(a.container)o+="In: "+a.container+"\\n";if(a.text)o+="Text: \\\""+a.text+"\\\"\\n";o+="TODO: "+a.comment+"\\n";return o}');
+src.push('function buildFullOutput(){if(!annotations.length)return"";var o="";for(var i=0;i<annotations.length;i++){o+=buildAnnotationText(annotations[i],i);if(i<annotations.length-1)o+="\\n"}return o}');
+
+// Render panel
+src.push('function renderPanel(){panelCount.textContent="("+annotations.length+")";if(!annotations.length){panelBody.innerHTML=\'<div class="__ep-panel-empty">Click elements on the page to start annotating.</div>\';return}panelBody.innerHTML="";annotations.forEach(function(a,i){var item=document.createElement("div");item.className="__ep-panel-item";item.innerHTML=\'<div class="ep-item-num">[\'+(i+1)+"] "+a.sel+\'</div><div class="ep-item-sel">\'+a.fullpath+"</div>"+(a.container?\'<div class="ep-item-cont">in \'+a.container+"</div>":"")+\'<div class="ep-item-comment">TODO: \'+a.comment+\'</div><button class="ep-item-del" title="Remove">\\u00d7</button>\';item.querySelector(".ep-item-del").addEventListener("click",function(e){e.stopPropagation();annotations.splice(i,1);renderPanel()});panelBody.appendChild(item)});panelBody.scrollTop=panelBody.scrollHeight}');
+
+// Copy all
+src.push('function copyAll(){var o=buildFullOutput();if(!o){showToast("No annotations yet");return}navigator.clipboard.writeText(o).then(function(){showToast("All annotations copied!")})}');
+
+// Panel button handlers
+src.push('panel.querySelector(".ep-copy-all").addEventListener("click",function(){copyAll()});');
+src.push('panel.querySelector(".ep-done").addEventListener("click",function(){copyAll();setTimeout(cleanup,200)});');
+
+// Dialog
+src.push('function showDialog(el,x,y){dialogOpen=true;var sel=getSelector(el),parent=getParentPath(el),container=getContainer(el),fullpath=getFullPath(el);var clone=el.cloneNode(true);clone.querySelectorAll("br").forEach(function(b){b.replaceWith(" ")});var text=(clone.textContent||"").replace(/\\s+/g," ").trim().substring(0,60);if(text.length===60)text+="...";var d=document.createElement("div");d.className="__ep-dialog";var left=Math.min(x,window.innerWidth-400),top=Math.min(y,window.innerHeight-220);d.style.left=Math.max(8,left)+"px";d.style.top=Math.max(8,top)+"px";');
+src.push('d.innerHTML=\'<h4>Annotate Element</h4><div class="ep-sel">\'+sel+(container?\' <span style="color:#facc15">in \'+container+"</span>":"")+\'</div><textarea placeholder="What needs to change?" autofocus></textarea><div class="ep-btns"><button class="ep-cancel">Skip</button><button class="ep-save">Add to List</button></div>\';');
+src.push('document.body.appendChild(d);var ta=d.querySelector("textarea");ta.focus();');
+src.push('function save(){var comment=ta.value.trim();if(!comment){ta.focus();return}annotations.push({sel:sel,tag:el.tagName.toLowerCase(),text:text,container:container,parent:parent,fullpath:fullpath,comment:comment});renderPanel();showToast("Added #"+annotations.length);d.remove();dialogOpen=false}');
+src.push('function cancel(){el.classList.remove("__ep-selected");d.remove();dialogOpen=false}');
+src.push('d.querySelector(".ep-save").addEventListener("click",save);d.querySelector(".ep-cancel").addEventListener("click",cancel);');
+src.push('ta.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();save()}if(e.key==="Escape"){cancel()}})');
+src.push('}');
+
+// Event handlers
+src.push('function onMove(e){if(dialogOpen)return;var t=e.target;if(t.closest(".__ep-dialog")||t.closest(".__ep-banner")||t.closest(".__ep-panel"))return;if(hoveredEl&&hoveredEl!==t)hoveredEl.classList.remove("__ep-hover");hoveredEl=t;t.classList.add("__ep-hover")}');
+src.push('function onClick(e){if(dialogOpen)return;var t=e.target;if(t.closest(".__ep-dialog")||t.closest(".__ep-banner")||t.closest(".__ep-panel"))return;e.preventDefault();e.stopPropagation();t.classList.remove("__ep-hover");t.classList.add("__ep-selected");hoveredEl=null;showDialog(t,e.clientX+12,e.clientY+12)}');
+src.push('function cleanup(){window.__epActive=false;document.removeEventListener("mousemove",onMove,true);document.removeEventListener("click",onClick,true);document.removeEventListener("keydown",onKey,true);var s=document.getElementById("__ep-styles");if(s)s.remove();banner.remove();panel.remove();document.querySelectorAll(".__ep-hover,.__ep-selected").forEach(function(el){el.classList.remove("__ep-hover","__ep-selected")});document.querySelectorAll(".__ep-dialog,.__ep-toast").forEach(function(el){el.remove()})}');
+src.push('function onKey(e){if(e.key==="Escape"&&!dialogOpen){if(annotations.length)copyAll();setTimeout(cleanup,200)}}');
+src.push('document.addEventListener("mousemove",onMove,true);document.addEventListener("click",onClick,true);document.addEventListener("keydown",onKey,true);');
+src.push('})();');
+
+document.getElementById('bookmarklet').href = 'javascript:' + encodeURIComponent(src.join(''));
+</script>
+
+</body>
+</html>
