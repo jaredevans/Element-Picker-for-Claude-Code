@@ -8,6 +8,9 @@ A bookmarklet that lets you click elements on any web page, annotate what needs 
 
 When working with Claude Code on a frontend project, describing *which* element you want changed and *where* it lives in the DOM is tedious. This bookmarklet lets you point and click instead — select elements visually, type what you want changed, and get a clipboard-ready annotation list that gives Claude Code the selector, full CSS path, container context, and your instructions.
 
+![Element Picker screenshot 1](ep-1.png)
+![Element Picker screenshot 2](ep-2.png)
+
 ## Demo
 
 ```
