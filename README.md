@@ -14,17 +14,11 @@ When working with Claude Code on a frontend project, describing *which* element 
 ## Demo
 
 ```
-[1] button#submit-btn.btn-primary
-Path: div.container > form#checkout > div.actions > button#submit-btn.btn-primary
-In: div.actions
-Text: "Submit Order"
-TODO: Make this green with white text
-
-[2] h1.page-title
-Path: div.container > header.top-bar > h1.page-title
-In: header.top-bar
-Text: "Dashboard"
-TODO: Change to "Overview" and reduce font size
+[1] a#bookmarklet
+Path: div.container > div.bookmarklet-section > a#bookmarklet
+In: div.bookmarklet-section
+Text: "⊕ Element Picker"
+TODO: Make this button blue
 ```
 
 ## Install
